@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notepad</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      margin: 0;
+      padding: 0;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .notepad-container {
+      background: #2c2c2c;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+      width: 800px;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    select, input {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #555;
+      border-radius: 5px;
+      background: #1e1e1e;
+      color: white;
+    }
+
+    textarea {
+      width: calc(100% - 20px);
+      height: 400px;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #555;
+      border-radius: 5px;
+      background: #1e1e1e;
+      color: white;
+      box-sizing: border-box;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      outline: none;
+      border-color: #007BFF;
+    }
+
+    .buttons {
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 15px;
+      font-size: 14px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    button:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+
+    .github-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #6cc644;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .github-button:hover {
+      background-color: #5cb030;
+    }
+  </style>
+</head>
+<body>
+  <div class="notepad-container">
+    <h1>Notepad</h1>
+    <button class="github-button" onclick="window.open('https://github.com/y8tireu', '_blank')">GitHub Profile</button>
+    <select id="note-selector"></select>
+    <textarea id="notepad" placeholder="Type your note here..."></textarea>
+    <div class="buttons">
+      <button id="new-note-btn">New Note</button>
+      <button id="save-note-btn">Save Note</button>
+      <button id="delete-note-btn">Delete Note</button>
+      <button id="set-password-btn">Set Password</button>
+      <button id="download-txt-btn">Save as TXT</button>
+      <button id="load-txt-btn">Load TXT</button>
+    </div>
+    <input type="file" id="file-input-txt" style="display: none;" accept=".txt">
+  </div>
+  <script>
+    const noteSelector = document.getElementById('note-selector');
+    const notepad = document.getElementById('notepad');
+    const newNoteBtn = document.getElementById('new-note-btn');
+    const saveNoteBtn = document.getElementById('save-note-btn');
+    const deleteNoteBtn = document.getElementById('delete-note-btn');
+    const setPasswordBtn = document.getElementById('set-password-btn');
+    const downloadTxtBtn = document.getElementById('download-txt-btn');
+    const loadTxtBtn = document.getElementById('load-txt-btn');
+    const fileInputTxt = document.getElementById('file-input-txt');
+
+    // Load notes from localStorage
+    const loadNotes = () => {
+      const notes = JSON.parse(localStorage.getItem('notes')) || {};
+      noteSelector.innerHTML = '';
+      for (const note in notes) {
+        const option = document.createElement('option');
+        option.value = note;
+        option.textContent = note;
+        noteSelector.appendChild(option);
+      }
+    };
+
+    // Load note content
+    const loadNoteContent = () => {
+      const notes = JSON.parse(localStorage.getItem('notes')) || {};
+      const selectedNote = noteSelector.value;
+      if (selectedNote) {
+        const note = notes[selectedNote];
+        if (note.password) {
+          const enteredPassword = prompt('This note is password protected. Enter the password:');
+          if (enteredPassword !== note.password) {
+            alert('Incorrect password!');
+            return;
+          }
+        }
+        notepad.value = note.content || '';
+      }
+    };
+
+    // Save note
+    const saveNote = () => {
+      const notes = JSON.parse(localStorage.getItem('notes')) || {};
+      const selectedNote = noteSelector.value;
+      if (selectedNote) {
+        notes[selectedNote] = {
+          content: notepad.value,
+          password: notes[selectedNote]?.password || null,
+        };
+        localStorage.setItem('notes', JSON.stringify(notes));
+        alert('Note saved successfully!');
+      } else {
+        alert('Please select or create a note to save.');
+      }
+    };
+
+    // Create new note
+    const createNewNote = () => {
+      const noteName = prompt('Enter the name of the new note:');
+      if (noteName) {
+        const notes = JSON.parse(localStorage.getItem('notes')) || {};
+        if (notes[noteName]) {
+          alert('Note with this name already exists!');
+        } else {
+          notes[noteName] = { content: '', password: null };
+          localStorage.setItem('notes', JSON.stringify(notes));
+          loadNotes();
+          noteSelector.value = noteName;
+          notepad.value = '';
+        }
+      }
+    };
+
+    // Delete note
+    const deleteNote = () => {
+      const notes = JSON.parse(localStorage.getItem('notes')) || {};
+      const selectedNote = noteSelector.value;
+      if (selectedNote && confirm(`Are you sure you want to delete the note: "${selectedNote}"?`)) {
+        delete notes[selectedNote];
+        localStorage.setItem('notes', JSON.stringify(notes));
+        loadNotes();
+        notepad.value = '';
+      }
+    };
+
+    // Set password
+    const setPassword = () => {
+      const notes = JSON.parse(localStorage.getItem('notes')) || {};
+      const selectedNote = noteSelector.value;
+      if (selectedNote) {
+        const newPassword = prompt('Enter a new password for this note (leave blank to remove password):');
+        notes[selectedNote].password = newPassword || null;
+        localStorage.setItem('notes', JSON.stringify(notes));
+        alert(newPassword ? 'Password set successfully!' : 'Password removed successfully!');
+      } else {
+        alert('Please select a note to set a password.');
+      }
+    };
+
+    // Load TXT file
+    const loadTxtFile = (event) => {
+      const file = event.target.files[0];
+      if (file && file.type === "text/plain") {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          notepad.value = e.target.result;
+          alert('File loaded successfully!');
+        };
+        reader.readAsText(file);
+      } else {
+        alert('Please select a valid TXT file.');
+      }
+    };
+
+    // Save as TXT file
+    const saveAsTxtFile = () => {
+      const selectedNote = noteSelector.value;
+      if (!selectedNote) {
+        alert('Please select a note to save.');
+        return;
+      }
+      const notes = JSON.parse(localStorage.getItem('notes')) || {};
+      const noteContent = notes[selectedNote]?.content || notepad.value;
+      const blob = new Blob([noteContent], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${selectedNote}.txt`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    };
+
+    // Event listeners
+    loadTxtBtn.addEventListener('click', () => fileInputTxt.click());
+    fileInputTxt.addEventListener('change', loadTxtFile);
+    downloadTxtBtn.addEventListener('click', saveAsTxtFile);
+    newNoteBtn.addEventListener('click', createNewNote);
+    saveNoteBtn.addEventListener('click', saveNote);
+    deleteNoteBtn.addEventListener('click', deleteNote);
+    setPasswordBtn.addEventListener('click', setPassword);
+    noteSelector.addEventListener('change', loadNoteContent);
+    window.onload = loadNotes;
+  </script>
+</body>
+</html>
+
